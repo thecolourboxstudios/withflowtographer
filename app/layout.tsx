@@ -64,10 +64,24 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+<html lang="en">
       <body
-        className={`font-sans antialiased ${roboto.variable} ${libreBaskerville.variable} ${alexBrush.variable} ${oswald.variable}`}
+        className={`font-sans antialiased ${roboto.variable} ${libreBaskerville.variable} ${alexBrush.variable} ${oswald.variable} relative`}
       >
+        {/* Background Video */}
+        <div className="fixed inset-0 z-[-1] overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover opacity-100"
+          >
+            <source src="https://res.cloudinary.com/dbbzsyl8u/video/upload/v1767420310/1664_Final_Showreel_tja4ai.mp4" type="video/mp4" />
+          </video>
+          
+        </div>
+        
         <Preloader />
         <SmoothScroll>{children}</SmoothScroll>
         <Analytics />

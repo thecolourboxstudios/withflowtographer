@@ -36,7 +36,7 @@ export async function GET() {
     body: JSON.stringify({
       expression: `folder:${folder}/*`,
       sort_by: [{ public_id: "desc" }],
-      max_results: 200,
+      max_results: 100,
     }),
     cache: "no-store",
   })

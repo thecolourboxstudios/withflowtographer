@@ -30,7 +30,7 @@ export default function Home() {
         }>
           <CloudinaryGallerySection />
         </Suspense>
-        <RiderTechSection />
+        {/* <RiderTechSection />
         <div className="relative w-full h-[120px] md:h-[160px] lg:h-[200px] overflow-hidden bg-white">
           <Image
             src="/images/trilha2.svg"
@@ -39,7 +39,7 @@ export default function Home() {
             className="object-cover object-center"
             priority={false}
           />
-        </div>
+        </div> */}
         <VideoShowcase />
         <div className="relative w-full h-[120px] md:h-[160px] lg:h-[200px] overflow-hidden bg-white">
           <Image

@@ -5,6 +5,7 @@ import type React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 type GalleryItem = {
   id: number
@@ -39,6 +40,8 @@ export default function CloudinaryGallerySection() {
   const [lastViewedId, setLastViewedId] = useState<number | null>(null)
   const lastViewedRef = useRef<HTMLAnchorElement | null>(null)
 
+  const isMobile = useIsMobile()
+
   const photoIdRaw = searchParams.get("photoId")
   const photoId = photoIdRaw ? Number(photoIdRaw) : null
   const hasValidPhotoId = Number.isFinite(photoId) && photoId !== null
@@ -55,7 +58,6 @@ export default function CloudinaryGallerySection() {
         if (!mounted) return
         setCloudName(data.cloudName)
         
-        // Process resources to ensure proper video handling
         const processedResources = Array.isArray(data.resources) 
           ? data.resources.map(item => ({
               ...item,
@@ -63,7 +65,6 @@ export default function CloudinaryGallerySection() {
             }))
           : []
         
-        console.log('Loaded gallery items:', processedResources)
         setItems(processedResources)
       } catch (e) {
         if (!mounted) return
@@ -94,7 +95,11 @@ export default function CloudinaryGallerySection() {
     if (photoIdRaw) return
     if (lastViewedId === null) return
     if (!lastViewedRef.current) return
-    lastViewedRef.current.scrollIntoView({ block: "center" })
+    lastViewedRef.current.scrollIntoView({ 
+      block: "center", 
+      behavior: "smooth", 
+      inline: "center" 
+    })
     setLastViewedId(null)
     sessionStorage.removeItem("lastViewedPhotoId")
   }, [lastViewedId, photoIdRaw])
@@ -125,12 +130,28 @@ export default function CloudinaryGallerySection() {
     return { images, videos, total: items.length }
   }, [items])
 
+  // Scroll to current index on mobile after load
+  const galleryRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (isMobile && currentIndex >= 0 && galleryRef.current && !hasValidPhotoId) {
+      const scrollToIndex = () => {
+        const item = galleryRef.current?.querySelector(`[data-index="${currentIndex}"]`) as HTMLElement
+        if (item) {
+          item.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
+        }
+      }
+      // Delay to ensure render
+      const timer = setTimeout(scrollToIndex, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [isMobile, currentIndex, hasValidPhotoId])
+
   return (
-    <section id="gallery" className="relative bg-[#0a0f0a] text-white py-24 px-6 md:px-12 overflow-hidden">
+    <section id="gallery" className="relative  text-white py-16 md:py-24 px-4 md:px-6 lg:px-12 overflow-hidden">
       {/* Animated organic background shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          animate={{
+          animate={isMobile ? {} : {
             scale: [1, 1.2, 1],
             rotate: [0, 90, 0],
             opacity: [0.02, 0.04, 0.02],
@@ -140,10 +161,10 @@ export default function CloudinaryGallerySection() {
             repeat: Infinity,
             ease: "linear",
           }}
-          className="absolute -top-1/2 -right-1/4 w-[1000px] h-[1000px] rounded-full bg-white blur-[150px]"
+          className="absolute -top-1/2 -right-1/4 w-[600px] md:w-[1000px] h-[600px] md:h-[1000px] rounded-full bg-white blur-[100px] md:blur-[150px]"
         />
         <motion.div
-          animate={{
+          animate={isMobile ? {} : {
             scale: [1, 1.3, 1],
             rotate: [0, -90, 0],
             opacity: [0.02, 0.03, 0.02],
@@ -153,7 +174,7 @@ export default function CloudinaryGallerySection() {
             repeat: Infinity,
             ease: "linear",
           }}
-          className="absolute -bottom-1/2 -left-1/4 w-[900px] h-[900px] rounded-full bg-white blur-[140px]"
+          className="absolute -bottom-1/2 -left-1/4 w-[500px] md:w-[900px] h-[500px] md:h-[900px] rounded-full bg-white blur-[100px] md:blur-[140px]"
         />
       </div>
 
@@ -172,9 +193,9 @@ export default function CloudinaryGallerySection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           viewport={{ once: true }}
-          className="mb-12 md:mb-16"
+          className="mb-8 md:mb-12 lg:mb-16"
         >
-          <h2 className="text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tight leading-[0.9]">
+          <h2 className="text-4xl md:text-6xl lg:text-8xl font-black uppercase tracking-tight leading-[0.9]">
             <motion.span
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -189,7 +210,7 @@ export default function CloudinaryGallerySection() {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
               viewport={{ once: true }}
-              className="block font-light italic text-6xl md:text-8xl lg:text-9xl"
+              className="block font-light italic text-5xl md:text-7xl lg:text-9xl"
               style={{
                 fontFamily: "Georgia, serif",
                 letterSpacing: "-0.02em",
@@ -203,19 +224,19 @@ export default function CloudinaryGallerySection() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
             viewport={{ once: true }}
-            className="mt-6 max-w-2xl text-white/70 text-base md:text-lg font-light"
+            className="mt-4 md:mt-6 max-w-2xl text-white/70 text-sm md:text-base lg:text-lg font-light"
           >
             A curated collection of visual stories. Click any item to experience it in full glory.
           </motion.p>
         </motion.div>
 
-        {/* Filter buttons with glassmorphism */}
+        {/* Filter buttons with glassmorphism - Horizontal scroll on very small screens if needed */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
           viewport={{ once: true }}
-          className="mb-10 flex flex-wrap gap-3"
+          className="mb-8 md:mb-10 flex flex-row overflow-x-auto gap-2 md:gap-3 pb-2 scrollbar-hide snap-x snap-mandatory"
         >
           {[
             { key: "all", label: "All", count: counts.total },
@@ -225,17 +246,17 @@ export default function CloudinaryGallerySection() {
             <motion.button
               key={key}
               onClick={() => setFilter(key as typeof filter)}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: isMobile ? 1 : 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`relative px-6 py-3 rounded-full backdrop-blur-xl border transition-all duration-300 ${
+              className={`relative flex-none px-4 md:px-6 py-2 md:py-3 rounded-full backdrop-blur-xl border transition-all duration-300 min-w-max snap-center ${
                 filter === key
                   ? "bg-white/20 border-white/30 text-white shadow-lg"
                   : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/80"
               }`}
             >
-              <span className="text-sm font-medium tracking-wider uppercase">
+              <span className="text-xs md:text-sm font-medium tracking-wider uppercase">
                 {label}
-                <span className="ml-2 text-xs opacity-60">({count})</span>
+                <span className="ml-1 md:ml-2 text-xs opacity-60">({count})</span>
               </span>
             </motion.button>
           ))}
@@ -245,11 +266,11 @@ export default function CloudinaryGallerySection() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center justify-center py-20"
+            className="flex items-center justify-center py-16 md:py-20"
           >
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-              <p className="text-white/60 text-sm">Loading gallery...</p>
+            <div className="flex flex-col items-center gap-3 md:gap-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+              <p className="text-white/60 text-xs md:text-sm">Loading gallery...</p>
             </div>
           </motion.div>
         )}
@@ -258,7 +279,7 @@ export default function CloudinaryGallerySection() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-xl px-6 py-4 text-white/80"
+            className="rounded-xl md:rounded-2xl border border-white/20 bg-white/5 backdrop-blur-xl px-4 md:px-6 py-3 md:py-4 text-sm md:text-base text-white/80"
           >
             {error}
           </motion.div>
@@ -268,29 +289,37 @@ export default function CloudinaryGallerySection() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-20"
+            className="text-center py-16 md:py-20"
           >
-            <p className="text-white/60 text-lg">No {filter !== "all" ? filter + "s" : "items"} found.</p>
+            <p className="text-white/60 text-base md:text-lg">No {filter !== "all" ? filter + "s" : "items"} found.</p>
           </motion.div>
         )}
 
         {!loading && !error && filteredItems.length > 0 && (
           <motion.div
+            ref={galleryRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5"
+            className={
+              isMobile 
+                ? "flex flex-row overflow-x-auto gap-3 pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth" 
+                : "columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5"
+            }
+            style={isMobile ? { WebkitOverflowScrolling: 'touch', scrollBehavior: 'smooth' } : {}}
           >
             {filteredItems.map((item, idx) => {
               const isVideo = item.resource_type === "video"
+              const thumbWidth = isMobile ? 300 : 720
               const thumbUrl = isVideo
-                ? `https://res.cloudinary.com/${cloudName}/video/upload/c_scale,w_720,so_0/${item.public_id}.jpg`
-                : `https://res.cloudinary.com/${cloudName}/image/upload/c_scale,w_720/${item.public_id}.${item.format}`
-              const computedHeight = Math.max(1, Math.round((720 * item.height) / item.width))
+                ? `https://res.cloudinary.com/${cloudName}/video/upload/c_scale,w_${thumbWidth},so_0,f_auto,q_auto/${item.public_id}.jpg`
+                : `https://res.cloudinary.com/${cloudName}/image/upload/c_scale,w_${thumbWidth},f_auto,q_auto/${item.public_id}.${item.format}`
+              const computedHeight = Math.max(1, Math.round((thumbWidth * item.height) / item.width))
 
               return (
                 <motion.a
                   key={item.id}
+                  data-index={idx}
                   href={`/?photoId=${item.id}`}
                   onClick={(e) => {
                     e.preventDefault()
@@ -301,42 +330,39 @@ export default function CloudinaryGallerySection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{
                     duration: 0.5,
-                    delay: idx * 0.05,
+                    delay: isMobile ? 0 : idx * 0.05,
                     ease: [0.22, 1, 0.36, 1],
                   }}
                   viewport={{ once: true, margin: "-50px" }}
-                  whileHover={{ scale: 1.02 }}
-                  className="group relative mb-4 block break-inside-avoid cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm"
+                  whileHover={isMobile ? {} : { scale: 1.02 }}
+                  className={`group relative ${isMobile ? "flex-none w-40 h-40 snap-center" : "mb-4 break-inside-avoid"} block cursor-pointer overflow-hidden rounded-xl md:rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm`}
                 >
-                  <div className="relative">
+                  <div className="relative w-full h-full">
                     <Image
+                      loading="lazy"
                       alt={isVideo ? "Video thumbnail" : "Gallery photo"}
                       src={thumbUrl}
-                      width={720}
-                      height={computedHeight}
-                      sizes="(max-width: 640px) 100vw,
-                        (max-width: 1024px) 50vw,
-                        (max-width: 1280px) 33vw,
-                        (max-width: 1536px) 25vw,
-                        20vw"
-                      className="h-auto w-full object-cover transition-all duration-500 group-hover:scale-105"
+                      width={thumbWidth}
+                      height={isMobile ? 300 : computedHeight}
+                      sizes={isMobile ? "(max-width: 640px) 160px" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, (max-width: 1536px) 25vw, 20vw"}
+                      className="w-full h-full object-cover"
                     />
 
                     {/* Gradient overlay */}
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 md:group-hover:opacity-100 transition-opacity duration-300" />
 
                     {/* Video play button */}
                     {isVideo && (
                       <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
                         whileInView={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: idx * 0.05 + 0.2 }}
+                        transition={{ delay: isMobile ? 0 : idx * 0.05 + 0.2 }}
                         viewport={{ once: true }}
                         className="absolute inset-0 flex items-center justify-center"
                       >
-                        <div className="rounded-full bg-white/20 backdrop-blur-xl border border-white/30 p-6 transition-all duration-300 group-hover:bg-white/30 group-hover:scale-110">
+                        <div className="rounded-full bg-white/20 backdrop-blur-xl border border-white/30 p-1.5 md:p-4 lg:p-6 transition-all duration-300 group-hover:bg-white/30 group-hover:scale-110">
                           <svg
-                            className="w-8 h-8 text-white"
+                            className="w-4 h-4 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white"
                             fill="currentColor"
                             viewBox="0 0 24 24"
                           >
@@ -348,25 +374,39 @@ export default function CloudinaryGallerySection() {
 
                     {/* Duration badge for videos */}
                     {isVideo && item.duration && (
-                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-3 py-1">
-                        <span className="text-white text-xs font-medium">
+                      <div className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-1.5 py-0.5">
+                        <span className="text-white text-[10px] font-medium">
                           {Math.floor(item.duration / 60)}:{String(Math.floor(item.duration % 60)).padStart(2, "0")}
                         </span>
                       </div>
                     )}
 
-                    {/* Type indicator */}
-                    <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-3 py-1">
-                      <span className="text-white text-xs font-medium uppercase tracking-wider">
-                        {isVideo ? "Video" : "Photo"}
-                      </span>
-                    </div>
+                 
                   </div>
                 </motion.a>
               )
-            })}
-          </motion.div>
-        )}
+              })}
+            </motion.div>
+          )}
+  
+          {/* Mobile scroll indicator dots - simple UX for position awareness */}
+          {isMobile && filteredItems.length > 1 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex justify-center gap-2 mt-4"
+            >
+              {Array.from({ length: Math.ceil(filteredItems.length / 3) }).map((_, dotIdx) => (
+                <motion.div
+                  key={dotIdx}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    Math.floor((currentIndex || 0) / 3) === dotIdx ? 'bg-white' : 'bg-white/30'
+                  }`}
+                  whileHover={{ scale: 1.2 }}
+                />
+              ))}
+            </motion.div>
+          )}
       </div>
 
       {hasValidPhotoId && currentIndex >= 0 && cloudName && (
@@ -378,6 +418,7 @@ export default function CloudinaryGallerySection() {
           onNavigate={(nextId) => {
             router.push(`/?photoId=${nextId}`, { scroll: false })
           }}
+          isMobile={isMobile}
         />
       )}
     </section>
@@ -390,12 +431,14 @@ function GalleryModal({
   index,
   onClose,
   onNavigate,
+  isMobile,
 }: {
   cloudName: string
   items: GalleryItem[]
   index: number
   onClose: (currentId: number) => void
   onNavigate: (nextId: number) => void
+  isMobile: boolean
 }) {
   const current = items[index]
   const canPrev = index > 0
@@ -403,8 +446,64 @@ function GalleryModal({
   const isVideo = current.resource_type === "video"
 
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [touchStartY, setTouchStartY] = useState<number | null>(null)
   const [isPlaying, setIsPlaying] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const modalContentRef = useRef<HTMLDivElement>(null)
+  const thumbnailScrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [])
+
+  // Mouse wheel horizontal scroll for thumbnails
+  useEffect(() => {
+    const scrollContainer = thumbnailScrollRef.current
+    if (!scrollContainer) return
+
+    const handleWheel = (e: WheelEvent) => {
+      // Only handle horizontal scrolling in the thumbnail area
+      if (Math.abs(e.deltaX) > 0 || Math.abs(e.deltaY) > 0) {
+        e.preventDefault()
+        // Convert vertical scroll to horizontal
+        const delta = e.deltaY !== 0 ? e.deltaY : e.deltaX
+        scrollContainer.scrollLeft += delta
+      }
+    }
+
+    scrollContainer.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      scrollContainer.removeEventListener('wheel', handleWheel)
+    }
+  }, [])
+
+  // Prevent download: Disable right-click, drag, and key events for save
+  useEffect(() => {
+    const preventDownload = (e: MouseEvent | KeyboardEvent) => {
+      if (e.type === 'contextmenu' || e.type === 'dragstart' || (e.type === 'keydown' && (e as KeyboardEvent).key === 's' || (e as KeyboardEvent).key === 'S') && ((e as KeyboardEvent).ctrlKey || (e as KeyboardEvent).metaKey)) {
+        e.preventDefault()
+      }
+    }
+
+    const content = modalContentRef.current
+    if (content) {
+      content.addEventListener('contextmenu', preventDownload)
+      content.addEventListener('dragstart', preventDownload)
+      content.addEventListener('keydown', preventDownload)
+    }
+
+    return () => {
+      if (content) {
+        content.removeEventListener('contextmenu', preventDownload)
+        content.removeEventListener('dragstart', preventDownload)
+        content.removeEventListener('keydown', preventDownload)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -439,24 +538,36 @@ function GalleryModal({
   const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (e.touches.length === 0) return
     setTouchStartX(e.touches[0].clientX)
+    setTouchStartY(e.touches[0].clientY)
+  }
+
+  const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    // Optional: Add haptic feedback or visual swipe indicator if needed
   }
 
   const onTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (touchStartX === null) return
+    if (touchStartX === null || touchStartY === null) return
     const endX = e.changedTouches[0]?.clientX
-    if (typeof endX !== "number") return
+    const endY = e.changedTouches[0]?.clientY
+    if (typeof endX !== "number" || typeof endY !== "number") return
 
-    const delta = endX - touchStartX
+    const deltaX = endX - touchStartX
+    const deltaY = endY - touchStartY
+    const absDeltaX = Math.abs(deltaX)
+    const absDeltaY = Math.abs(deltaY)
+
+    // Determine if it's a horizontal swipe (ignore vertical scrolls)
+    if (absDeltaX > absDeltaY && absDeltaX > 50) {
+      e.preventDefault() // Prevent page scroll on swipe
+      if (deltaX > 0 && canPrev) {
+        onNavigate(items[index - 1].id)
+      } else if (deltaX < 0 && canNext) {
+        onNavigate(items[index + 1].id)
+      }
+    }
+
     setTouchStartX(null)
-
-    if (Math.abs(delta) < 50) return
-    if (delta > 0 && canPrev) {
-      onNavigate(items[index - 1].id)
-      return
-    }
-    if (delta < 0 && canNext) {
-      onNavigate(items[index + 1].id)
-    }
+    setTouchStartY(null)
   }
 
   const fullUrl = isVideo
@@ -465,14 +576,16 @@ function GalleryModal({
 
   const mainUrl = isVideo
     ? fullUrl
-    : `https://res.cloudinary.com/${cloudName}/image/upload/c_scale,w_1920/${current.public_id}.${current.format}`
+    : `https://res.cloudinary.com/${cloudName}/image/upload/c_scale,w_${isMobile ? 1080 : 1920},f_auto,q_auto/${current.public_id}.${current.format}`
 
   const thumbIds = useMemo(() => {
-    const start = clamp(index - 15, 0, items.length - 1)
-    const end = clamp(index + 15, 0, items.length - 1)
+    const maxThumbs = isMobile ? 5 : 30 // Fewer thumbs on mobile for horizontal scroll
+    const halfThumbs = Math.floor(maxThumbs / 2)
+    const start = clamp(index - halfThumbs, 0, items.length - 1)
+    const end = clamp(index + halfThumbs, 0, items.length - 1)
     const slice = items.slice(start, end + 1)
     return slice
-  }, [items, index])
+  }, [items, index, isMobile])
 
   const togglePlayPause = () => {
     if (!videoRef.current) return
@@ -492,9 +605,9 @@ function GalleryModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="fixed inset-0 z-[9999]"
+        className="fixed inset-0 z-[10000]"
       >
-        {/* Footer-inspired backdrop with texture */}
+        {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -502,7 +615,7 @@ function GalleryModal({
           className="absolute inset-0 bg-[#282c20]"
           onClick={() => onClose(current.id)}
         >
-          {/* Texture overlay from footer */}
+          {/* Texture overlay */}
           <div
             className="absolute inset-0 w-full h-full opacity-20"
             style={{
@@ -514,7 +627,7 @@ function GalleryModal({
           />
           {/* Animated gradient blobs */}
           <motion.div
-            animate={{
+            animate={isMobile ? {} : {
               scale: [1, 1.1, 1],
               opacity: [0.03, 0.05, 0.03],
             }}
@@ -523,14 +636,16 @@ function GalleryModal({
               repeat: Infinity,
               ease: "linear",
             }}
-            className="absolute -top-1/4 -right-1/4 w-[800px] h-[800px] rounded-full bg-[#CFFF04] blur-[200px]"
+            className="absolute -top-1/4 -right-1/4 w-[600px] md:w-[800px] h-[600px] md:h-[800px] rounded-full bg-[#CFFF04] blur-[150px] md:blur-[200px]"
           />
         </motion.div>
 
         {/* Content */}
         <div
-          className="relative z-10 flex h-full w-full items-center justify-center p-4 md:p-8"
+          ref={modalContentRef}
+          className="relative z-10 flex h-full w-full items-center justify-center"
           onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
           <motion.div
@@ -538,18 +653,12 @@ function GalleryModal({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full h-full flex flex-col max-w-[95vw] max-h-[95vh]"
+            className="relative w-full h-full flex flex-col"
           >
-            {/* Main content container - Responsive to content size */}
-            <div className="relative flex-1 flex items-center justify-center min-h-0">
+            {/* Main content container - with padding at bottom for thumbnail strip */}
+            <div className="relative flex-1 flex items-center justify-center p-1 md:p-6 lg:p-8 min-h-0 pb-32 md:pb-48 lg:pb-52">
               <div 
-                className="relative overflow-hidden rounded-xl md:rounded-2xl border border-white/20 bg-[#1a1f1a] shadow-2xl"
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  width: isVideo ? 'auto' : 'auto',
-                  height: isVideo ? 'auto' : 'auto',
-                }}
+                className="relative overflow-hidden rounded-lg md:rounded-xl lg:rounded-2xl border border-white/20 bg-[#1a1f1a] shadow-2xl max-w-full max-h-full flex items-center justify-center"
               >
                 {isVideo ? (
                   <video
@@ -559,115 +668,43 @@ function GalleryModal({
                     controls
                     playsInline
                     controlsList="nodownload"
-                    className="max-w-full max-h-[70vh] md:max-h-[75vh] w-auto h-auto object-contain"
+                    disablePictureInPicture
+                    className="w-auto h-auto max-w-full max-h-[55vh] md:max-h-[65vh] object-contain"
                     src={mainUrl}
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
                     style={{
-                      display: 'block',
+                      aspectRatio: `${current.width}/${current.height}`,
                     }}
                   />
                 ) : (
                   <div 
-                    className="relative"
-                    style={{
-                      maxWidth: '90vw',
-                      maxHeight: '70vh',
-                      aspectRatio: `${current.width}/${current.height}`,
-                    }}
+                    className="relative flex items-center justify-center w-full h-full"
                   >
                     <Image
                       alt="Gallery image"
                       src={mainUrl}
                       width={current.width}
                       height={current.height}
-                      sizes="90vw"
-                      className="object-contain w-full h-full"
+                      sizes={isMobile ? "100vw" : "90vw"}
+                      className="object-contain max-w-full max-h-[70vh] md:max-h-[80vh]"
                       priority
-                      style={{
-                        maxWidth: '100%',
-                        maxHeight: '70vh',
-                        width: 'auto',
-                        height: 'auto',
-                      }}
                     />
                   </div>
                 )}
               </div>
 
-              {/* Top left controls */}
-              <div className="absolute top-3 left-3 md:top-4 md:left-4 flex items-center gap-2 z-30">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  type="button"
-                  onClick={() => onClose(current.id)}
-                  className="rounded-full bg-[#282c20]/90 backdrop-blur-xl border border-[#CFFF04]/30 px-3 md:px-4 py-2 text-xs font-bold uppercase tracking-wider text-white/90 hover:bg-[#CFFF04] hover:text-[#282c20] transition-all shadow-lg"
-                >
-                  Close
-                </motion.button>
-              </div>
-
-              {/* Top right controls */}
-              <div className="absolute top-3 right-3 md:top-4 md:right-4 flex items-center gap-2 z-30">
-                <motion.a
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  href={fullUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full bg-[#282c20]/90 backdrop-blur-xl border border-[#CFFF04]/30 px-3 md:px-4 py-2 text-xs font-bold uppercase tracking-wider text-white/90 hover:bg-[#CFFF04] hover:text-[#282c20] transition-all shadow-lg"
-                >
-                  Open
-                </motion.a>
-                <motion.a
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  href={fullUrl}
-                  download
-                  className="rounded-full bg-[#282c20]/90 backdrop-blur-xl border border-[#CFFF04]/30 px-3 md:px-4 py-2 text-xs font-bold uppercase tracking-wider text-white/90 hover:bg-[#CFFF04] hover:text-[#282c20] transition-all shadow-lg"
-                >
-                  Download
-                </motion.a>
-              </div>
-
-              {/* Video play/pause overlay button */}
-              {isVideo && (
-                <button
-                  type="button"
-                  onClick={togglePlayPause}
-                  className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 cursor-pointer z-20"
-                  aria-label={isPlaying ? "Pause" : "Play"}
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="rounded-full bg-[#282c20]/80 backdrop-blur-xl border-2 border-[#CFFF04] p-5 md:p-6"
-                  >
-                    {isPlaying ? (
-                      <svg className="w-10 h-10 md:w-12 md:h-12 text-[#CFFF04]" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                      </svg>
-                    ) : (
-                      <svg className="w-10 h-10 md:w-12 md:h-12 text-[#CFFF04]" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    )}
-                  </motion.div>
-                </button>
-              )}
-
-              {/* Navigation arrows */}
+              {/* Navigation arrows - More responsive sizing */}
               {canPrev && (
                 <motion.button
-                  whileHover={{ scale: 1.1, x: -4 }}
+                  whileHover={isMobile ? {} : { scale: 1.1, x: -4 }}
                   whileTap={{ scale: 0.95 }}
                   type="button"
                   onClick={() => onNavigate(items[index - 1].id)}
-                  className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 rounded-full bg-[#282c20]/90 backdrop-blur-xl border border-[#CFFF04]/30 p-3 md:p-4 text-[#CFFF04] hover:bg-[#CFFF04] hover:text-[#282c20] transition-all shadow-lg z-30"
+                  className={`absolute left-1 md:left-4 top-1/2 -translate-y-1/2 rounded-full bg-[#282c20]/90 backdrop-blur-xl border border-[#CFFF04]/30 p-2 md:p-3 lg:p-4 text-[#CFFF04] hover:bg-[#CFFF04] hover:text-[#282c20] transition-all shadow-lg z-30 ${isMobile ? 'opacity-60 active:opacity-100 w-8 h-8' : 'w-10 h-10 md:w-12 md:h-12'}`}
                   aria-label="Previous"
                 >
-                  <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                  <svg className="w-3 h-3 md:w-5 md:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                   </svg>
                 </motion.button>
@@ -675,75 +712,95 @@ function GalleryModal({
 
               {canNext && (
                 <motion.button
-                  whileHover={{ scale: 1.1, x: 4 }}
+                  whileHover={isMobile ? {} : { scale: 1.1, x: 4 }}
                   whileTap={{ scale: 0.95 }}
                   type="button"
                   onClick={() => onNavigate(items[index + 1].id)}
-                  className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 rounded-full bg-[#282c20]/90 backdrop-blur-xl border border-[#CFFF04]/30 p-3 md:p-4 text-[#CFFF04] hover:bg-[#CFFF04] hover:text-[#282c20] transition-all shadow-lg z-30"
+                  className={`absolute right-1 md:right-4 top-1/2 -translate-y-1/2 rounded-full bg-[#282c20]/90 backdrop-blur-xl border border-[#CFFF04]/30 p-2 md:p-3 lg:p-4 text-[#CFFF04] hover:bg-[#CFFF04] hover:text-[#282c20] transition-all shadow-lg z-30 ${isMobile ? 'opacity-60 active:opacity-100 w-8 h-8' : 'w-10 h-10 md:w-12 md:h-12'}`}
                   aria-label="Next"
                 >
-                  <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                  <svg className="w-3 h-3 md:w-5 md:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </motion.button>
               )}
             </div>
 
-            {/* Thumbnail navigation */}
+            {/* Bottom section - Fixed with thumbnails and close button */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mt-4 md:mt-6 overflow-hidden rounded-xl md:rounded-2xl bg-[#282c20]/80 backdrop-blur-xl border border-[#CFFF04]/20"
+              className="fixed bottom-0 left-0 right-0 z-[10001] pb-safe"
             >
-              <div className="flex gap-2 overflow-x-auto px-3 md:px-4 py-2 md:py-3 scrollbar-thin scrollbar-thumb-[#CFFF04]/40 scrollbar-track-transparent">
-                {thumbIds.map((item) => {
-                  const thumbUrl = item.resource_type === "video"
-                    ? `https://res.cloudinary.com/${cloudName}/video/upload/c_scale,w_180,so_0/${item.public_id}.jpg`
-                    : `https://res.cloudinary.com/${cloudName}/image/upload/c_scale,w_180/${item.public_id}.${item.format}`
-                  const isActive = item.id === current.id
-                  return (
-                    <motion.button
-                      key={item.id}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      type="button"
-                      onClick={() => onNavigate(item.id)}
-                      className={`relative h-14 md:h-16 w-[84px] md:w-[96px] flex-none overflow-hidden rounded-lg border transition-all ${
-                        isActive
-                          ? "border-[#CFFF04] shadow-[0_0_0_2px_rgba(207,255,4,0.4)] scale-105"
-                          : "border-white/20 opacity-60 hover:opacity-100 hover:border-[#CFFF04]/50"
-                      }`}
-                      aria-label={`View ${item.resource_type} ${item.id}`}
-                    >
-                      <Image alt="Thumbnail" src={thumbUrl} fill className="object-cover" />
-                      {item.resource_type === "video" && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                          <div className="rounded-full bg-[#CFFF04]/30 backdrop-blur-sm p-1">
-                            <svg className="w-3 h-3 md:w-4 md:h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
+              {/* Thumbnail navigation - Horizontal scroll with touch and mouse wheel support */}
+              <div className="mx-4 mb-3 md:mx-6 md:mb-4 lg:mx-8 lg:mb-5 overflow-hidden rounded-xl md:rounded-2xl bg-[#282c20]/80 backdrop-blur-xl border border-[#CFFF04]/20 shadow-2xl">
+                <div 
+                  ref={thumbnailScrollRef}
+                  className={`flex gap-1 md:gap-2 overflow-x-auto px-2 md:px-4 py-3 md:py-4 lg:py-5 scrollbar-thin scrollbar-thumb-[#CFFF04]/40 scrollbar-track-transparent snap-x snap-mandatory scroll-smooth ${isMobile ? 'pb-2' : ''}`}
+                  style={isMobile ? { 
+                    WebkitOverflowScrolling: 'touch',
+                    touchAction: 'pan-x' // Allow horizontal touch scrolling only
+                  } : {}}
+                >
+                  {thumbIds.map((item) => {
+                    const thumbWidth = isMobile ? 60 : 180
+                    const thumbUrl = item.resource_type === "video"
+                      ? `https://res.cloudinary.com/${cloudName}/video/upload/c_scale,w_${thumbWidth},so_0,f_auto,q_auto/${item.public_id}.jpg`
+                      : `https://res.cloudinary.com/${cloudName}/image/upload/c_scale,w_${thumbWidth},f_auto,q_auto/${item.public_id}.${item.format}`
+                    const isActive = item.id === current.id
+                    return (
+                      <motion.button
+                        key={item.id}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        type="button"
+                        onClick={() => onNavigate(item.id)}
+                        className={`relative flex-none overflow-hidden rounded-lg border transition-all snap-center ${
+                          isMobile 
+                            ? `h-14 w-14 md:h-16 md:w-16` 
+                            : `h-14 md:h-16 w-[84px] md:w-[96px]`
+                        } ${
+                          isActive
+                            ? "border-[#CFFF04] shadow-[0_0_0_2px_rgba(207,255,4,0.4)] scale-105"
+                            : "border-white/20 opacity-60 hover:opacity-100 hover:border-[#CFFF04]/50"
+                        }`}
+                        aria-label={`View ${item.resource_type} ${item.id}`}
+                      >
+                        <Image 
+                          loading="lazy"
+                          alt="Thumbnail" 
+                          src={thumbUrl} 
+                          fill 
+                          className="object-cover" 
+                          sizes={isMobile ? "60px" : "100px"}
+                        />
+                        {item.resource_type === "video" && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <div className={`rounded-full bg-[#CFFF04]/30 backdrop-blur-sm p-${isMobile ? '0.5' : '1'}`}>
+                              <svg className={`w-2 h-2 md:w-4 md:h-4 text-white`} fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </motion.button>
-                  )
-                })}
+                        )}
+                      </motion.button>
+                    )
+                  })}
+                </div>
               </div>
-            </motion.div>
 
-            {/* Info bar */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mt-3 md:mt-4 flex items-center justify-between px-2"
-            >
-              <div className="text-white/70 text-xs md:text-sm font-medium">
-                {index + 1} / {items.length}
-              </div>
-              <div className="text-[#CFFF04] text-xs md:text-sm uppercase tracking-wider font-bold">
-                {current.resource_type === "video" ? "Video" : "Image"}
+              {/* Close button - Below thumbnails */}
+              <div className="flex items-center justify-center px-4 pb-4 md:pb-6 lg:pb-8">
+                <motion.button
+                  whileHover={{ scale: isMobile ? 1 : 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  type="button"
+                  onClick={() => onClose(current.id)}
+                  className="rounded-full bg-[#282c20]/90 backdrop-blur-xl border border-[#CFFF04]/30 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold uppercase tracking-wider text-white/90 hover:bg-[#CFFF04] hover:text-[#282c20] transition-all shadow-lg"
+                >
+                  Close
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>
