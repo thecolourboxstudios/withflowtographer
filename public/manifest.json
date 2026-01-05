@@ -1,0 +1,26 @@
+{
+  "name": "Rahul Vadhs - Professional Photographer",
+  "short_name": "Rahul Vadhs",
+  "description": "Professional photography portfolio by Rahul Vadhs. Capturing moments through the lens.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "categories": ["photography", "portfolio", "business"],
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

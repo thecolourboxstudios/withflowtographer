@@ -36,9 +36,57 @@ const oswald = Oswald({
 })
 
 export const metadata: Metadata = {
-  title: "Rahul Vadhs - Photography Portfolio",
-  description: "Professional photography portfolio by Rahul Vadhs - Capturing moments through the lens",
-  generator: "Rahul Vadhs",
+  title: "Rahul Vadhs - Professional Photographer | withtheflowtographer.com",
+  description: "Professional photography portfolio by Rahul Vadhs. Capturing moments through the lens - weddings, portraits, events, and creative photography. Award-winning photographer based in India.",
+  keywords: "photography, photographer, Rahul Vadhs, wedding photography, portrait photography, event photography, professional photographer, India photographer, withtheflowtographer",
+  authors: [{ name: "Rahul Vadhs" }],
+  creator: "Rahul Vadhs",
+  publisher: "Rahul Vadhs Photography",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL('https://withtheflowtographer.com'),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: "Rahul Vadhs - Professional Photographer",
+    description: "Professional photography portfolio by Rahul Vadhs. Capturing moments through the lens - weddings, portraits, events,Corporate and creative photography.",
+    url: 'https://withtheflowtographer.com',
+    siteName: 'withtheflowtographer.com',
+    images: [
+      {
+        url: '/images/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Rahul Vadhs - Professional Photographer',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Rahul Vadhs - Professional Photographer",
+    description: "Professional photography portfolio by Rahul Vadhs. Capturing moments through the lens - weddings, portraits, events, and creative photography.",
+    images: ['/images/og-image.jpg'],
+    creator: '@withtheflowtographer',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: [
       {
@@ -49,13 +97,10 @@ export const metadata: Metadata = {
         url: "/icon-dark-32x32.png",
         media: "(prefers-color-scheme: dark)",
       },
-      {
-        url: "/icon.ico",
-        type: "image/svg+xml",
-      },
     ],
     apple: "/apple-icon.png",
   },
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({
@@ -65,6 +110,56 @@ export default function RootLayout({
 }>) {
   return (
 <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              "name": "Rahul Vadhs",
+              "jobTitle": "Professional Photographer",
+              "description": "Award-winning professional photographer specializing in weddings, portraits, events, and creative photography",
+              "url": "https://withtheflowtographer.com",
+              "image": "https://withtheflowtographer.com/images/profile.jpg",
+              "sameAs": [
+                "https://www.instagram.com/withtheflowtographer/",
+                "https://www.twitter.com/withtheflowtographer",
+                "https://www.facebook.com/withtheflowtographer"
+              ],
+              "address": {
+                "@type": "PostalAddress",
+                "addressCountry": "IN"
+              },
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "telephone": "+91-9769926713",
+                "contactType": "customer service",
+                "availableLanguage": "English",
+                "email": "rahulvadhs@gmail.com"
+              },
+              "hasOccupation": {
+                "@type": "Occupation",
+                "name": "Professional Photographer",
+                "occupationLocation": {
+                  "@type": "Country",
+                  "name": "India"
+                }
+              },
+              "knowsAbout": [
+                "Photography",
+                "Wedding Photography",
+                "Portrait Photography",
+                "Event Photography",
+                "Commercial Photography",
+                "Photo Editing",
+                "Lightroom",
+                "Photoshop"
+              ]
+            })
+          }}
+        />
+      </head>
       <body
         className={`font-sans antialiased ${roboto.variable} ${libreBaskerville.variable} ${alexBrush.variable} ${oswald.variable} relative`}
       >

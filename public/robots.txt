@@ -1,0 +1,12 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+# Host
+Host: https://withtheflowtographer.com
+
+# Sitemaps
+Sitemap: https://withtheflowtographer.com/sitemap.xml
+Sitemap: https://withtheflowtographer.com/server-sitemap.xml

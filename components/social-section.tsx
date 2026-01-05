@@ -1,18 +1,21 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { motion, PanInfo } from "framer-motion"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 
-const socialImages = [
-  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80",
-  "https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&q=80",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80",
-  "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&q=80", // Center image
-  "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=600&q=80",
-  "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=600&q=80", // Added to reach 7
-  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80", // Added to reach 7
-]
+type CloudinaryImage = {
+  id: number
+  public_id: string
+  format: string
+  width: number
+  height: number
+}
+
+type CloudinaryResponse = {
+  cloudName: string
+  resources: CloudinaryImage[]
+}
 
 const handIcons = [
   {
@@ -45,7 +48,51 @@ const handIcons = [
 export default function SocialSection() {
   const [currentIconIndex, setCurrentIconIndex] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(3)
+  const [socialImages, setSocialImages] = useState<string[]>([])
+  const [cloudName, setCloudName] = useState<string>("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
+  // Fetch images from Cloudinary
+  useEffect(() => {
+    const fetchCloudinaryImages = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch("/api/cloudinary")
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch images from Cloudinary")
+        }
+
+        const data: CloudinaryResponse = await response.json()
+        
+        if (data.resources && data.resources.length > 0) {
+          // Convert Cloudinary resources to image URLs
+          const imageUrls = data.resources.map((resource) => {
+            return `https://res.cloudinary.com/${data.cloudName}/image/upload/w_600,q_80/${resource.public_id}.${resource.format}`
+          })
+          
+          setSocialImages(imageUrls)
+          setCloudName(data.cloudName)
+          
+          // Set center image based on available images
+          setCurrentImageIndex(Math.floor(imageUrls.length / 2))
+        } else {
+          setError("No images found in Cloudinary folder")
+        }
+      } catch (err) {
+        console.error("Error fetching Cloudinary images:", err)
+        setError(err instanceof Error ? err.message : "Failed to load images")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCloudinaryImages()
+  }, [])
+
+  // Animated icon switcher
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIconIndex((prev) => (prev + 1) % handIcons.length)
@@ -53,6 +100,7 @@ export default function SocialSection() {
     return () => clearInterval(interval)
   }, [])
 
+  // Detect mobile
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 640)
     update()
@@ -60,11 +108,33 @@ export default function SocialSection() {
     return () => window.removeEventListener("resize", update)
   }, [])
 
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const swipeThreshold = 50
+    
+    if (info.offset.x > swipeThreshold) {
+      setCurrentImageIndex((prev) => (prev === 0 ? socialImages.length - 1 : prev - 1))
+    } else if (info.offset.x < -swipeThreshold) {
+      setCurrentImageIndex((prev) => (prev === socialImages.length - 1 ? 0 : prev + 1))
+    }
+  }
+
+  const getCardPosition = (index: number) => {
+    const centerIndex = currentImageIndex
+    const diff = index - centerIndex
+    
+    let adjustedDiff = diff
+    if (Math.abs(diff) > socialImages.length / 2) {
+      adjustedDiff = diff > 0 ? diff - socialImages.length : diff + socialImages.length
+    }
+    
+    return adjustedDiff
+  }
+
   return (
     <section id="social" className="relative bg-[#F5F1E8] text-black py-24 px-6 md:px-12 overflow-hidden">
       <div className="max-w-7xl mx-auto">
         <div className="relative h-32 flex items-center justify-center mt-16">
-          {/* Replaced static image with animated icon switcher */}
+          {/* Animated icon switcher */}
           <div className="relative h-full w-auto max-h-[60px] aspect-square">
             {handIcons.map((icon, index) => (
               <div
@@ -101,48 +171,147 @@ export default function SocialSection() {
           <h3 className="text-4xl md:text-6xl font-brier mt-2 lg:text-6xl leading-10 text-lorenzo-dark">ON SOCIALS</h3>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          viewport={{ once: true }}
-          className="relative h-[600px] md:h-[700px] mb-16 flex items-center justify-center"
-        >
-          {socialImages.map((image, i) => (
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-16">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-black/20 border-t-black"></div>
+            <p className="mt-4 text-lg text-black/60">Loading images...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="text-center py-16">
+            <p className="text-lg text-red-600">{error}</p>
+          </div>
+        )}
+
+        {/* Desktop View - Stack of cards */}
+        {!isMobile && !loading && socialImages.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            viewport={{ once: true }}
+            className="relative h-[700px] mb-16 flex items-center justify-center"
+          >
+            {socialImages.map((image, i) => {
+              const centerIndex = Math.floor(socialImages.length / 2)
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, rotate: 0, scale: 0 }}
+                  whileInView={{
+                    opacity: 1,
+                    rotate: (i - centerIndex) * 6,
+                    scale: 1 - Math.abs(i - centerIndex) * 0.02,
+                    x: (i - centerIndex) * 90,
+                    y: Math.abs(i - centerIndex) * 35,
+                  }}
+                  transition={{
+                    duration: 0.8,
+                    delay: 0.2 + i * 0.1,
+                    type: "spring",
+                    stiffness: 60,
+                    damping: 12,
+                  }}
+                  viewport={{ once: true }}
+                  whileHover={{
+                    rotate: 0,
+                    scale: 1.1,
+                    zIndex: 20,
+                    y: -40,
+                    transition: { duration: 0.3 },
+                  }}
+                  className="absolute w-80 h-[480px] bg-white rounded-3xl shadow-2xl overflow-hidden cursor-pointer origin-bottom"
+                  style={{ zIndex: 10 - Math.abs(i - centerIndex) }}
+                >
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={image}
+                      alt={`Social post ${i + 1}`}
+                      fill
+                      className="object-cover pointer-events-none"
+                      draggable={false}
+                    />
+                  </div>
+                </motion.div>
+              )
+            })}
+          </motion.div>
+        )}
+
+        {/* Mobile View - Swipeable carousel */}
+        {isMobile && !loading && socialImages.length > 0 && (
+          <div className="relative h-[600px] mb-16 flex items-center justify-center overflow-hidden">
             <motion.div
-              key={i}
-              initial={{ opacity: 0, rotate: 0, scale: 0 }}
-              whileInView={{
-                opacity: 1,
-                rotate: (i - 3) * 6, // Adjusted rotation for 7 items (centered at index 3)
-                scale: 1 - Math.abs(i - 3) * 0.02, // Reduced scale drop-off
-                x: (i - 3) * (isMobile ? 44 : 90), // Reduce spread on mobile to prevent overflow
-                y: Math.abs(i - 3) * (isMobile ? 20 : 35), // Reduce vertical curve on mobile
-              }}
-              transition={{
-                duration: 0.8,
-                delay: 0.2 + i * 0.1,
-                type: "spring",
-                stiffness: 60,
-                damping: 12,
-              }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, ease: "easeOut" }}
               viewport={{ once: true }}
-              whileHover={{
-                rotate: 0,
-                scale: 1.1,
-                zIndex: 20,
-                y: -40,
-                transition: { duration: 0.3 },
-              }}
-              className="absolute w-48 sm:w-60 md:w-80 h-72 sm:h-80 md:h-[480px] bg-white rounded-3xl shadow-2xl overflow-hidden cursor-pointer origin-bottom"
-              style={{ zIndex: 10 - Math.abs(i - 3) }} // Adjusted z-index logic for 7 items
+              className="relative w-full h-full flex items-center justify-center"
             >
-              <div className="relative w-full h-full">
-                <Image src={image || "/placeholder.svg"} alt={`Social post ${i + 1}`} fill className="object-cover" />
-              </div>
+              {socialImages.map((image, i) => {
+                const position = getCardPosition(i)
+                const isCenter = position === 0
+                const isVisible = Math.abs(position) <= 3
+                
+                return (
+                  <motion.div
+                    key={i}
+                    drag={isCenter ? "x" : false}
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.7}
+                    onDragEnd={isCenter ? handleDragEnd : undefined}
+                    initial={{ opacity: 0, rotate: 0, scale: 0 }}
+                    animate={{
+                      opacity: isVisible ? 1 : 0,
+                      rotate: position * 6,
+                      scale: isCenter ? 1 : 1 - Math.abs(position) * 0.08,
+                      x: position * 44,
+                      y: Math.abs(position) * 20,
+                      zIndex: isCenter ? 20 : 10 - Math.abs(position),
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30,
+                    }}
+                    className="absolute w-48 h-72 bg-white rounded-3xl shadow-2xl overflow-hidden origin-bottom"
+                    style={{ 
+                      touchAction: 'none',
+                      pointerEvents: isCenter ? 'auto' : 'none'
+                    }}
+                  >
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={image}
+                        alt={`Social post ${i + 1}`}
+                        fill
+                        className="object-cover pointer-events-none select-none"
+                        draggable={false}
+                      />
+                    </div>
+                  </motion.div>
+                )
+              })}
             </motion.div>
-          ))}
-        </motion.div>
+
+            {/* Pagination dots */}
+            <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex gap-2">
+              {socialImages.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentImageIndex(i)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    i === currentImageIndex ? 'bg-black w-6' : 'bg-black/30'
+                  }`}
+                  aria-label={`Go to image ${i + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

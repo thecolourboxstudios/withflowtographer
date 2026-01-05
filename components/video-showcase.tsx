@@ -99,10 +99,17 @@ export default function VideoShowcase() {
                 </p>
               </blockquote>
 
-              {/* Author attribution */}
-              <div className="mt-4">
-                <p className="text-base font-medium font-mono md:text-lg text-accent">- Rahul Vadhs</p>
-              </div>
+         {/* Author attribution */}
+<div className="mt-4">
+  <p className="text-base font-medium font-mono md:text-lg text-accent">
+    – Rahul Vadhs
+    <br />
+    <span className="text-sm md:text-base text-muted-foreground">
+      CO-founder at The Colour Box Studio, Professional Photographer & Videographer
+    </span>
+  </p>
+</div>
+
 
               {/* Video stats */}
               <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-8 w-full">

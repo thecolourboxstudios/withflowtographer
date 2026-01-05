@@ -211,7 +211,27 @@ export default function Footer() {
           {/* Partners Row */}
           {/* Added mb-8 to ensure logos don't touch the bottom edge of the mask */}
           <div className="border-lorenzo-text-light/10 border-t-0 mb-0 mt-32 pt-0">
-            <InfiniteLogoSlider />
+            <Suspense fallback={
+              <div className="w-full overflow-hidden py-10 relative">
+                <div className="flex justify-center items-center space-x-4 sm:space-x-8">
+                  {[...Array(7)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-gray-300 animate-pulse h-[88px] w-[110px] sm:h-[120px] sm:w-[150px] rounded-lg opacity-50"
+                    />
+                  ))}
+                </div>
+              </div>
+            }>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                viewport={{ once: true }}
+              >
+                <InfiniteLogoSlider />
+              </motion.div>
+            </Suspense>
           </div>
         </div>
       </div>

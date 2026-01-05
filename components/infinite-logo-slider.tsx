@@ -1,5 +1,8 @@
 "use client"
 
+import { useState } from "react"
+import Image from "next/image"
+
 const logos = [
   { name: "Artist Connect", src: "https://res.cloudinary.com/dbbzsyl8u/image/upload/v1767456054/Artist_Connect_Logo_New_PNG_1_ferj42.png" },
   { name: "Vibe Factory", src: "https://res.cloudinary.com/dbbzsyl8u/image/upload/v1767456054/red_jbhvy7.png" },
@@ -12,12 +15,18 @@ const logos = [
 ]
 
 export default function InfiniteLogoSlider() {
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
+
   // Create a sequence of logos that is definitely wide enough (4 sets)
   const singleSequence = [...logos, ...logos, ...logos, ...logos]
 
   // We need two copies of this sequence to loop seamlessly by moving -50%
   // This creates a very long strip: [Seq 1][Seq 2]
   const sliderContent = [...singleSequence, ...singleSequence]
+
+  const handleImageLoad = (index: number) => {
+    setLoadedImages(prev => new Set(prev).add(index))
+  }
 
   return (
     <div className="w-full overflow-hidden py-10 relative mask-gradient bg-transparent">
@@ -46,11 +55,18 @@ export default function InfiniteLogoSlider() {
             key={index}
             className="relative bg-[#c8f550] h-[88px] w-[110px] sm:h-[120px] sm:w-[150px] flex items-center justify-center flex-shrink-0 mx-4 sm:mx-8 opacity-100 hover:grayscale hover:opacity-70 transition-all duration-300"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={logo.src || "/placeholder.svg"}
               alt={logo.name}
-              className="w-auto h-[40px] sm:h-[50px] object-contain"
+              width={120}
+              height={60}
+              className={`w-auto h-[40px] sm:h-[50px] object-contain transition-opacity duration-500 ${
+                loadedImages.has(index) ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => handleImageLoad(index)}
+              loading="lazy"
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+IRjWjBqO6O2mhP//Z"
             />
           </div>
         ))}
