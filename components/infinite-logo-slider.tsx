@@ -53,14 +53,14 @@ export default function InfiniteLogoSlider() {
         {sliderContent.map((logo, index) => (
           <div
             key={index}
-            className="relative bg-[#c8f550] h-[88px] w-[110px] sm:h-[120px] sm:w-[150px] flex items-center justify-center flex-shrink-0 mx-4 sm:mx-8 opacity-100 hover:grayscale hover:opacity-70 transition-all duration-300"
+            className="relative shadow-glass bg-[#f5f5f5] backdrop-blur-xl border border-[#f5f5f5] rounded-2xl h-[88px] w-[110px] sm:h-[120px] sm:w-[150px] flex items-center justify-center flex-shrink-0 mx-4 sm:mx-8 opacity-100 hover:grayscale hover:opacity-70 transition-all duration-300"
           >
             <Image
               src={logo.src || "/placeholder.svg"}
               alt={logo.name}
               width={120}
               height={60}
-              className={`w-auto h-[40px] sm:h-[50px] object-contain transition-opacity duration-500 ${
+              className={`w-auto h-[88px] sm:h-[110px] object-contain transition-opacity duration-500 ${
                 loadedImages.has(index) ? 'opacity-100' : 'opacity-0'
               }`}
               onLoad={() => handleImageLoad(index)}

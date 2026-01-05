@@ -162,7 +162,7 @@ export default function InteractivePortrait() {
 
     // Create video element and texture
     const video = document.createElement('video')
-    video.src = 'https://res.cloudinary.com/dbbzsyl8u/video/upload/v1767424190/NItya_Emcee_KWaa_idtfui.mp4'
+    video.src = 'https://res.cloudinary.com/dbbzsyl8u/video/upload/v1767420310/1664_Final_Showreel_tja4ai.mp4'
     video.crossOrigin = 'anonymous'
     video.loop = true
     video.muted = true
@@ -445,15 +445,6 @@ export default function InteractivePortrait() {
           </div>
         </div>
       )}
-
-      {/* Attribution */}
-      <div className="absolute bottom-4 left-4 z-10 pointer-events-none">
-        <p className="text-white/40 text-xs md:text-sm font-light">
-          Interactive Portrait Experience
-        </p>
-      </div>
-
-     
     </div>
   )
 }
